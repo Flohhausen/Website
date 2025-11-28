@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal</title>
+<style>
+body {font-family:'Arial',sans-serif; margin:0; background:#f4f6f8; color:#333;}
+header {background:#1E88E5; color:white; text-align:center; padding:25px; font-size:28px; box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+.container {display:flex; flex-wrap:wrap; justify-content:space-around; padding:20px;}
+.section {background:white; border-radius:10px; padding:20px; width:400px; margin:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+h2 {color:#1E88E5; margin-top:0;}
+input, select {width:100%; padding:10px; margin:5px 0 10px 0; border-radius:5px; border:1px solid #ccc;}
+button {padding:10px 15px; margin:5px 5px 0 0; border:none; border-radius:5px; cursor:pointer; background:#1E88E5; color:white; font-weight:bold; transition:0.2s;}
+button:hover {background:#1565C0;}
+.user-item, .game-item {display:flex; justify-content:space-between; align-items:center; background:#f1f3f4; padding:8px 10px; margin-bottom:5px; border-radius:5px;}
+.user-info, .game-info {flex:1;}
+.logout {position:absolute; top:10px; right:10px; cursor:pointer; background:#E53935; color:white; padding:8px 12px; border-radius:5px;}
+.logout:hover {background:#B71C1C;}
+.profile {margin-top:20px; background:#e3f2fd; padding:15px; border-radius:10px;}
+.profile h3 {margin-top:0;}
+</style>
+</head>
+<body>
+
+<header>Admin-Portal</header>
+<div class="logout" onclick="logout()">Logout</div>
+
+<div class="container">
+
+  <!-- Mein Profil -->
+  <div class="section profile">
+    <h2>Mein Profil</h2>
+    <h3 id="profileUsername"></h3>
+    <p><b>Rolle:</b> <span id="profileRole"></span></p>
+    <p><b>Coins:</b> <span id="profileCoins"></span></p>
+    <p><b>Level:</b> <span id="profileLevel"></span></p>
+    <p><b>Avatar:</b> <span id="profileAvatar"></span></p>
+    <button onclick="editProfile()">Profil bearbeiten</button>
+  </div>
+
+  <!-- Benutzerverwaltung -->
+  <div class="section">
+    <h2>Benutzerverwaltung</h2>
+    <div id="userList"></div>
+    <hr>
+    <h3>Neuen Benutzer hinzufügen</h3>
+    <input id="newUsername" placeholder="Benutzername">
+    <input id="newPassword" placeholder="Passwort" type="password">
+    <select id="newRole">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button onclick="addUser()">Hinzufügen</button>
+  </div>
+
+  <!-- Spieleverwaltung -->
+  <div class="section">
+    <h2>Spieleverwaltung</h2>
+    <div id="gameList"></div>
+    <hr>
+    <h3>Neues Spiel hinzufügen</h3>
+    <input id="newGameName" placeholder="Spielname">
+    <input id="newGameLink" placeholder="Dateiname (z.B. spiel3.html)">
+    <select id="newGameVisibility">
+      <option value="user">Für User sichtbar</option>
+      <option value="admin">Nur Admin sichtbar</option>
+    </select>
+    <button onclick="addGame()">Hinzufügen</button>
+  </div>
+
+  <!-- Shopverwaltung -->
+  <div class="section">
+    <h2>Shopverwaltung</h2>
+    <div id="shopList"></div>
+    <hr>
+    <h3>Neues Item hinzufügen</h3>
+    <input id="newShopItemName" placeholder="Item-Name">
+    <input id="newShopItemPrice" type="number" placeholder="Preis in Coins">
+    <select id="newShopItemVisibility">
+      <option value="user">Für User sichtbar</option>
+      <option value="admin">Nur Admin sichtbar</option>
+    </select>
+    <select id="newShopItemType">
+      <option value="cosmetic">Cosmetic</option>
+      <option value="collectible">Sammelobjekt</option>
+      <option value="admincoin">Coin Event</option>
+    </select>
+    <button onclick="addShopItem()">Hinzufügen</button>
+  </div>
+
+</div>
+
+<script>
+// Admin-Prüfung
+const username=localStorage.getItem("user");
+const role=localStorage.getItem("role");
+if(!username || role!=="admin") window.location.href="login.html";
+
+// Profil laden
+function loadProfile(){
+  const users=JSON.parse(localStorage.getItem("users"))||[];
+  const me=users.find(u=>u.username===username);
+  if(me){
+    document.getElementById("profileUsername").textContent=me.username;
+    document.getElementById("profileRole").textContent=me.role;
+    document.getElementById("profileCoins").textContent=me.coins;
+    document.getElementById("profileLevel").textContent=me.level;
+    document.getElementById("profileAvatar").textContent=me.avatar;
+  }
+}
+
+// Profil bearbeiten
+function editProfile(){
+  const users=JSON.parse(localStorage.getItem("users"))||[];
+  const meIndex=users.findIndex(u=>u.username===username);
+  if(meIndex>=0){
+    const newPass=prompt("Neues Passwort eingeben:",users[meIndex].password);
+    if(newPass) users[meIndex].password=newPass;
+    localStorage.setItem("users",JSON.stringify(users));
+    loadProfile();
+    alert("Passwort aktualisiert!");
+  }
+}
+
+// Nutzerverwaltung laden
+function loadUsers(){
+  const container=document.getElementById("userList");
+  container.innerHTML="";
+  const users=JSON.parse(localStorage.getItem("users"))||[];
+  users.forEach((u,i)=>{
+    const div=document.createElement("div");
+    div.className="user-item";
+    const info=document.createElement("div");
+    info.className="user-info";
+    info.textContent=`${u.username} (${u.role}) - Coins: ${u.coins} - Level: ${u.level}`;
+    div.appendChild(info);
+    const editBtn=document.createElement("button");
+    editBtn.textContent="Bearbeiten";
+    editBtn.onclick=()=>editUser(i);
+    div.appendChild(editBtn);
+    const delBtn=document.createElement("button");
+    delBtn.textContent="Löschen";
+    delBtn.onclick=()=>deleteUser(i);
+    div.appendChild(delBtn);
+    container.appendChild(div);
+  });
+}
+
+// Nutzer hinzufügen
+function addUser(){
+  const uname=document.getElementById("newUsername").value.trim();
+  const pass=document.getElementById("newPassword").value.trim();
+  const r=document.getElementById("newRole").value;
+  if(!uname||!pass){ alert("Benutzername & Passwort eingeben!"); return; }
+  let users=JSON.parse(localStorage.getItem("users"))||[];
+  if(users.find(u=>u.username===uname)){ alert("Benutzer existiert bereits!"); return; }
+  users.push({username:uname,password:pass,role:r,coins:0,level:1,avatar:"😀",friends:[]});
+  localStorage.setItem("users",JSON.stringify(users));
+  document.getElementById("newUsername").value="";
+  document.getElementById("newPassword").value="";
+  loadUsers();
+}
+
+// Nutzer bearbeiten
+function editUser(index){
+  const users=JSON.parse(localStorage.getItem("users"));
+  const newPass=prompt("Neues Passwort:",users[index].password);
+  const newRole=prompt("Neue Rolle (user/admin):",users[index].role);
+  if(newPass) users[index].password=newPass;
+  if(newRole==="user"||newRole==="admin") users[index].role=newRole;
+  localStorage.setItem("users",JSON.stringify(users));
+  loadUsers();
+}
+
+// Nutzer löschen
+function deleteUser(index){
+  const users=JSON.parse(localStorage.getItem("users"));
+  if(confirm("Benutzer wirklich löschen?")){
+    users.splice(index,1);
+    localStorage.setItem("users",JSON.stringify(users));
+    loadUsers();
+  }
+}
+
+// Spieleverwaltung laden
+function loadGames(){
+  const container=document.getElementById("gameList");
+  container.innerHTML="";
+  const games=JSON.parse(localStorage.getItem("games"))||[];
+  games.forEach((g,i)=>{
+    const div=document.createElement("div");
+    div.className="game-item";
+    const info=document.createElement("div");
+    info.className="game-info";
+    info.textContent=`${g.name} - Sichtbar für: ${g.visibleTo.join(", ")}`;
+    div.appendChild(info);
+    const delBtn=document.createElement("button");
+    delBtn.textContent="Löschen";
+    delBtn.onclick=()=>{
+      games.splice(i,1);
+      localStorage.setItem("games",JSON.stringify(games));
+      loadGames();
+    };
+    div.appendChild(delBtn);
+    container.appendChild(div);
+  });
+}
+
+// Spiel hinzufügen
+function addGame(){
+  const name=document.getElementById("newGameName").value.trim();
+  const link=document.getElementById("newGameLink").value.trim();
+  const vis=document.getElementById("newGameVisibility").value;
+  if(!name||!link){ alert("Name & Link eingeben!"); return; }
+  let games=JSON.parse(localStorage.getItem("games"))||[];
+  const visibleTo=vis==="user"?["user","admin"]:["admin"];
+  games.push({name,link,visibleTo,scores:{}});
+  localStorage.setItem("games",JSON.stringify(games));
+  document.getElementById("newGameName").value="";
+  document.getElementById("newGameLink").value="";
+  loadGames();
+}
+
+// Shopverwaltung
+if(!localStorage.getItem("shopItems")) localStorage.setItem("shopItems",JSON.stringify([
+  {name:"Roter Hut",price:20,type:"cosmetic",visibleTo:["user","admin"]},
+  {name:"Blauer Umhang",price:50,type:"cosmetic",visibleTo:["user","admin"]}
+]));
+
+function loadShopItems(){
+  const container=document.getElementById("shopList");
+  container.innerHTML="";
+  const items=JSON.parse(localStorage.getItem("shopItems"));
+  items.forEach((item,i)=>{
+    const div=document.createElement("div");
+    div.className="game-item";
+    const info=document.createElement("div");
+    info.className="game-info";
+    info.textContent=`${item.name} - Preis: ${item.price} Coins - Sichtbar für: ${item.visibleTo.join(", ")} - Typ: ${item.type}`;
+    div.appendChild(info);
+    const delBtn=document.createElement("button");
+    delBtn.textContent="Löschen";
+    delBtn.onclick=()=>{
+      items.splice(i,1);
+      localStorage.setItem("shopItems",JSON.stringify(items));
+      loadShopItems();
+    };
+    div.appendChild(delBtn);
+    container.appendChild(div);
+  });
+}
+
+function addShopItem(){
+  const name=document.getElementById("newShopItemName").value.trim();
+  const price=parseInt(document.getElementById("newShopItemPrice").value);
+  const vis=document.getElementById("newShopItemVisibility").value;
+  const type=document.getElementById("newShopItemType").value;
+  if(!name||isNaN(price)){ alert("Name & Preis eingeben!"); return; }
+  const items=JSON.parse(localStorage.getItem("shopItems"))||[];
+  const visibleTo=vis==="user"?["user","admin"]:["admin"];
+  items.push({name,price,type,visibleTo});
+  localStorage.setItem("shopItems",JSON.stringify(items));
+  document.getElementById("newShopItemName").value="";
+  document.getElementById("newShopItemPrice").value="";
+  loadShopItems();
+}
+
+// Logout
+function logout(){
+  localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  window.location.href="login.html";
+}
+
+// Initial
+loadProfile();
+loadUsers();
+loadGames();
+loadShopItems();
+</script>
+</body>
+</html>
+

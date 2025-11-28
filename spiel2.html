@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Jump Game</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: #87CEEB; /* Himmelblau */
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+  #gameCanvas {
+    display: block;
+    background: #87CEEB;
+    margin: 0 auto;
+  }
+  #score {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px #000;
+  }
+</style>
+</head>
+<body>
+<div id="score">Score: 0</div>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let player = {
+  x: 50,
+  y: 300,
+  width: 50,
+  height: 50,
+  dy: 0,
+  gravity: 0.8,
+  jumpPower: -15,
+  grounded: false
+};
+
+let obstacles = [];
+let spawnTimer = 0;
+let score = 0;
+let gameOver = false;
+
+// Tastatur Input
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && player.grounded) {
+    player.dy = player.jumpPower;
+    player.grounded = false;
+  }
+});
+
+function spawnObstacle() {
+  let height = Math.random() * 50 + 20;
+  obstacles.push({
+    x: canvas.width,
+    y: canvas.height - height,
+    width: 20,
+    height: height,
+    speed: 5
+  });
+}
+
+function update() {
+  if (gameOver) return;
+
+  // Spieler-Physik
+  player.dy += player.gravity;
+  player.y += player.dy;
+
+  if (player.y + player.height >= canvas.height) {
+    player.y = canvas.height - player.height;
+    player.dy = 0;
+    player.grounded = true;
+  }
+
+  // Hindernisse bewegen
+  spawnTimer++;
+  if (spawnTimer > 90) {
+    spawnObstacle();
+    spawnTimer = 0;
+  }
+
+  obstacles.forEach((obstacle, index) => {
+    obstacle.x -= obstacle.speed;
+
+    // Kollision
+    if (
+      player.x < obstacle.x + obstacle.width &&
+      player.x + player.width > obstacle.x &&
+      player.y < obstacle.y + obstacle.height &&
+      player.y + player.height > obstacle.y
+    ) {
+      gameOver = true;
+      alert('Game Over! Dein Score: ' + score);
+      document.location.reload();
+    }
+
+    // Punkte
+    if (!obstacle.passed && obstacle.x + obstacle.width < player.x) {
+      obstacle.passed = true;
+      score++;
+      document.getElementById('score').innerText = 'Score: ' + score;
+    }
+  });
+
+  // Hindernisse entfernen
+  obstacles = obstacles.filter(o => o.x + o.width > 0);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Spieler
+  ctx.fillStyle = '#FF4500';
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+
+  // Hindernisse
+  ctx.fillStyle = '#008000';
+  obstacles.forEach(obstacle => {
+    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+  });
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>

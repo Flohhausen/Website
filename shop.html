@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f8;color:#333;}
+header{background:#1E88E5;color:white;text-align:center;padding:25px;font-size:28px;position:relative;}
+.container{padding:30px;max-width:800px;margin:auto;display:flex;flex-wrap:wrap;justify-content:center;}
+.shop-item{background:white;padding:20px;margin:10px;border-radius:10px;width:180px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+button{padding:8px 12px;margin-top:10px;border:none;border-radius:5px;cursor:pointer;background:#1E88E5;color:white;font-weight:bold;transition:0.2s;}
+button:hover{background:#1565C0;}
+.logout{position:absolute;top:10px;right:10px;cursor:pointer;background:#E53935;color:white;padding:8px 12px;border-radius:5px;}
+</style>
+</head>
+<body>
+
+<header>Shop
+<div class="logout" onclick="logout()">Logout</div>
+<button style="position:absolute; top:10px; right:140px;" onclick="goHome()">Home</button>
+</header>
+
+<div class="container" id="shopContainer"></div>
+
+<script>
+const username=localStorage.getItem("user");
+const role=localStorage.getItem("role");
+if(!username){ window.location.href="index.html"; }
+
+// Items initialisieren
+if(!localStorage.getItem("shopItems")){
+    localStorage.setItem("shopItems",JSON.stringify([
+        {name:"Roter Hut",price:20,type:"cosmetic"},
+        {name:"Blauer Umhang",price:50,type:"cosmetic"},
+        {name:"Exklusiver Emoji 😎",price:100,type:"cosmetic"},
+        {name:"Coin Pack +100",price:0,type:"admincoin"} // Admin kann Coins geben
+    ]));
+}
+
+function loadShop(){
+    const container=document.getElementById("shopContainer");
+    container.innerHTML="";
+    const items=JSON.parse(localStorage.getItem("shopItems"));
+    const users=JSON.parse(localStorage.getItem("users"));
+    const meIndex=users.findIndex(u=>u.username===username);
+    const me=users[meIndex];
+
+    items.forEach((item,i)=>{
+        const div=document.createElement("div");
+        div.className="shop-item";
+        div.innerHTML=`<h3>${item.name}</h3><p>Preis: ${item.price} Coins</p>`;
+        const btn=document.createElement("button");
+        if(item.type==="admincoin" && role!=="admin"){ btn.disabled=true; btn.textContent="Nur Admin"; }
+        else btn.textContent="Kaufen";
+        btn.onclick=()=>{
+            if(item.type==="admincoin" && role==="admin"){
+                const target=prompt("Welcher Benutzer soll Coins bekommen?");
+                const amt=parseInt(prompt("Wie viele Coins?"));
+                const users=JSON.parse(localStorage.getItem("users"));
+                const tIndex=users.findIndex(u=>u.username===target);
+                if(tIndex>=0){ users[tIndex].coins+=amt; localStorage.setItem("users",JSON.stringify(users)); alert("Coins hinzugefügt!"); }
+                else alert("Benutzer nicht gefunden!");
+            } else if(me.coins>=item.price){
+                me.coins-=item.price;
+                alert("Gekauft: "+item.name);
+                localStorage.setItem("users",JSON.stringify(users));
+                loadShop();
+            } else alert("Nicht genug Coins!");
+        };
+        div.appendChild(btn);
+        container.appendChild(div);
+    });
+}
+
+function logout(){ localStorage.removeItem("user"); localStorage.removeItem("role"); window.location.href="index.html"; }
+function goHome(){ window.location.href="home.html"; }
+
+loadShop();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spiele Home</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#333;}
+header{background:#1E88E5;color:white;text-align:center;padding:25px;font-size:28px;position:relative;}
+.container{padding:30px;display:flex;flex-wrap:wrap;justify-content:center;}
+.game-card{background:white;padding:20px;margin:15px;border-radius:10px;width:250px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.1);transition:0.2s;}
+.game-card:hover{box-shadow:0 5px 15px rgba(0,0,0,0.2);}
+button{padding:10px 15px;border:none;border-radius:5px;cursor:pointer;background:#1E88E5;color:white;font-weight:bold;transition:0.2s;}
+button:hover{background:#1565C0;}
+.logout{position:absolute;top:10px;right:10px;cursor:pointer;background:#E53935;color:white;padding:8px 12px;border-radius:5px;}
+.logout:hover{background:#B71C1C;}
+.welcome{position:absolute;top:10px;left:20px;font-weight:bold;color:white;}
+</style>
+</head>
+<body>
+
+<header>
+Spiele Home
+<div class="welcome" id="welcomeUser"></div>
+<div class="logout" onclick="logout()">Logout</div>
+<button style="position:absolute; top:10px; right:140px;" onclick="goToProfile()">Mein Profil</button>
+<button style="position:absolute; top:10px; right:280px;" onclick="goToShop()">Shop</button>
+<button style="position:absolute; top:10px; right:400px;" onclick="goToFriends()">Freunde & Chat</button>
+<button style="position:absolute; top:10px; left:20px;" id="adminBtn" onclick="goToAdmin()">Admin-Portal</button>
+</header>
+
+<div class="container" id="gamesContainer"></div>
+
+<script>
+const username=localStorage.getItem("user");
+const role=localStorage.getItem("role");
+if(!username){ window.location.href="login.html"; }
+
+document.getElementById("welcomeUser").textContent="Willkommen, "+username;
+
+// Admin-Button nur sichtbar für Admins
+if(role!=="admin") document.getElementById("adminBtn").style.display="none";
+
+// Spiele laden
+function loadGames(){
+    const container=document.getElementById("gamesContainer");
+    container.innerHTML="";
+    const games=JSON.parse(localStorage.getItem("games"))||[];
+    games.forEach(g=>{
+        if(g.visibleTo.includes(role)){
+            const card=document.createElement("div");
+            card.className="game-card";
+            card.innerHTML=`<h3>${g.name}</h3><button onclick="playGame('${g.link}')">Spielen</button>`;
+            container.appendChild(card);
+        }
+    });
+}
+function playGame(link){ window.location.href=link; }
+function goToProfile(){ window.location.href="profil.html"; }
+function goToShop(){ window.location.href="shop.html"; }
+function goToFriends(){ window.location.href="friends_chat.html"; }
+function goToAdmin(){ window.location.href="admin.html"; }
+function logout(){ localStorage.removeItem("user"); localStorage.removeItem("role"); window.location.href="login.html"; }
+
+loadGames();
+</script>
+</body>
+</html>

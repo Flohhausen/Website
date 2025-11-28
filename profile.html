@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Profil</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f8;color:#333;}
+header{background:#1E88E5;color:white;text-align:center;padding:25px;font-size:28px;box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+.container{padding:30px;max-width:600px;margin:auto;}
+.profile-box{background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+h2{color:#1E88E5;margin-top:0;}
+label{display:block;margin-top:15px;font-weight:bold;}
+input{width:100%;padding:10px;margin-top:5px;border-radius:5px;border:1px solid #ccc;}
+button{padding:10px 15px;margin-top:15px;border:none;border-radius:5px;cursor:pointer;background:#1E88E5;color:white;font-weight:bold;transition:0.2s;}
+button:hover{background:#1565C0;}
+.logout{position:absolute;top:10px;right:10px;cursor:pointer;background:#E53935;color:white;padding:8px 12px;border-radius:5px;}
+.logout:hover{background:#B71C1C;}
+</style>
+</head>
+<body>
+
+<header>Mein Profil</header>
+<div class="logout" onclick="logout()">Logout</div>
+
+<div class="container">
+<div class="profile-box">
+<h2 id="profileUsername">Username</h2>
+<p><b>Rolle:</b> <span id="profileRole">user/admin</span></p>
+<p><b>Coins:</b> <span id="profileCoins">0</span></p>
+<p><b>Level:</b> <span id="profileLevel">1</span></p>
+<p><b>Avatar:</b> <span id="profileAvatar">😀</span></p>
+
+<label for="newPassword">Passwort ändern:</label>
+<input type="password" id="newPassword" placeholder="Neues Passwort">
+<button onclick="changePassword()">Passwort speichern</button>
+</div>
+</div>
+
+<script>
+const username=localStorage.getItem("user");
+if(!username) window.location.href="login.html";
+
+function loadProfile(){
+    const users=JSON.parse(localStorage.getItem("users"))||[];
+    const me=users.find(u=>u.username===username);
+    if(me){
+        document.getElementById("profileUsername").textContent=me.username;
+        document.getElementById("profileRole").textContent=me.role;
+        document.getElementById("profileCoins").textContent=me.coins;
+        document.getElementById("profileLevel").textContent=me.level;
+        document.getElementById("profileAvatar").textContent=me.avatar;
+    }
+}
+
+function changePassword(){
+    const users=JSON.parse(localStorage.getItem("users"))||[];
+    const meIndex=users.findIndex(u=>u.username===username);
+    const newPass=document.getElementById("newPassword").value.trim();
+    if(!newPass){ alert("Bitte Passwort eingeben!"); return; }
+    users[meIndex].password=newPass;
+    localStorage.setItem("users",JSON.stringify(users));
+    document.getElementById("newPassword").value="";
+    alert("Passwort geändert!");
+    loadProfile();
+}
+
+function logout(){ localStorage.removeItem("user"); localStorage.removeItem("role"); window.location.href="login.html"; }
+
+loadProfile();
+</script>
+</body>
+</html>
